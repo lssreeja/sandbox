@@ -3,27 +3,23 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import java.util.Optional;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-class SalesOrderServiceTest {
-
-    @Mock
-    private SalesRepository salesRepository;
+class LuserControllerTest {
 
     @Mock
-    private ProductRepository productRepository;
-
-    @Mock
-    private ModelMapper modelMapper;
+    private LuserService luserService;
 
     @InjectMocks
-    private SalesOrderService salesOrderService;
+    private LuserController luserController;
 
     @BeforeEach
     void setUp() {
@@ -31,114 +27,166 @@ class SalesOrderServiceTest {
     }
 
     @Test
-    void shouldGetAllSales() {
+    void shouldGetAllUsers() {
         // Arrange
-        SalesOrder order1 = new SalesOrder(1, "Pending", 10);
-        SalesOrder order2 = new SalesOrder(2, "Delivered", 15);
+        Iuser user1 = new Iuser(1, "Sreeja", "sree", "123", "sree@gmail.com");
+        Iuser user2 = new Iuser(2, "Satya", "satya", "123", "satya@gmail.com");
 
-        when(salesRepository.findAll()).thenReturn(List.of(order1, order2));
+        when(luserService.getAllUsers()).thenReturn(List.of(user1, user2));
 
         // Act
-        Iterable<SalesOrder> result = salesOrderService.getAllSales();
+        ResponseEntity<Iterable<Iuser>> response = luserController.getAllUsers();
 
         // Assert
-        assertThat(result).isNotNull();
-        assertThat(((List<SalesOrder>) result).size()).isEqualTo(2);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(((List<Iuser>) response.getBody()).size()).isEqualTo(2);
     }
 
     @Test
-    void shouldGetAllOrdersByProductId() {
+    void shouldGetUserById() {
         // Arrange
-        SalesOrder order1 = new SalesOrder(1, "Pending", 10);
-        SalesOrder order2 = new SalesOrder(2, "Delivered", 15);
+        Iuser user = new Iuser(1, "Sreeja", "sree", "123", "sree@gmail.com");
 
-        when(salesRepository.findByProductProductId(1)).thenReturn(List.of(order1, order2));
+        when(luserService.getUserById(1)).thenReturn(Optional.of(user));
 
         // Act
-        List<SalesOrder> result = salesOrderService.getAllOrdersByProductId(1);
+        ResponseEntity<Iuser> response = luserController.getUserById(1);
 
         // Assert
-        assertThat(result).isNotNull();
-        assertThat(result.size()).isEqualTo(2);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getName()).isEqualTo("Sreeja");
     }
 
     @Test
-    void shouldGetOrderById() {
+    void shouldThrowUserNotFoundExceptionWhenUserByIdIsNotFound() {
         // Arrange
-        SalesOrder order = new SalesOrder(1, "Pending", 10);
-        when(salesRepository.findById(1)).thenReturn(Optional.of(order));
+        when(luserService.getUserById(1)).thenReturn(Optional.empty());
 
-        // Act
-        Optional<SalesOrder> result = salesOrderService.getOrderById(1);
-
-        // Assert
-        assertThat(result).isPresent();
-        assertThat(result.get().getStatus()).isEqualTo("Pending");
+        // Act & Assert
+        assertThrows(UserNotFoundException.class, () -> luserController.getUserById(1));
     }
 
     @Test
-    void shouldAddNewOrder() {
+    void shouldAddNewUser() {
         // Arrange
-        SalesOrderDTO orderDto = new SalesOrderDTO("Pending", 10);
-        SalesOrder order = new SalesOrder(1, "Pending", 10);
+        IuserDTO userDto = new IuserDTO("Sreeja", "sree", "123", "sree@gmail.com");
+        Iuser savedUser = new Iuser(1, "Sreeja", "sree", "123", "sree@gmail.com");
 
-        when(modelMapper.map(orderDto, SalesOrder.class)).thenReturn(order);
-        when(salesRepository.save(any(SalesOrder.class))).thenReturn(order);
+        when(luserService.addNewUser(userDto)).thenReturn(savedUser);
 
         // Act
-        SalesOrder result = salesOrderService.addNewOrder(orderDto);
+        ResponseEntity<Iuser> response = luserController.addNewUser(userDto);
 
         // Assert
-        assertThat(result).isNotNull();
-        assertThat(result.getStatus()).isEqualTo("Pending");
-        assertThat(result.getQuantity()).isEqualTo(10);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getUsername()).isEqualTo("sree");
     }
 
     @Test
-    void shouldUpdateOrderByIdWhenDelivered() {
+    void shouldUpdateUserById() {
         // Arrange
-        SalesOrderDTO orderDto = new SalesOrderDTO("Delivered", 10);
-        SalesOrder order = new SalesOrder(1, "Delivered", 10);
-        Product product = new Product(1, "Product1", 50, 20);
+        IuserDTO userDto = new IuserDTO("Sreeja", "sree", "123", "sree@gmail.com");
+        Iuser existingUser = new Iuser(1, "Sreeja", "sree", "123", "sree@gmail.com");
+        Iuser updatedUser = new Iuser(1, "Sreeja", "sree", "12345", "sree@gmail.com");
 
-        when(modelMapper.map(orderDto, SalesOrder.class)).thenReturn(order);
-        when(productRepository.findById(1)).thenReturn(Optional.of(product));
-        when(salesRepository.save(order)).thenReturn(order);
+        when(luserService.getUserById(1)).thenReturn(Optional.of(existingUser));
+        when(luserService.updateUserById(userDto)).thenReturn(updatedUser);
 
         // Act
-        SalesOrder result = salesOrderService.updateOrderById(orderDto, 1);
+        ResponseEntity<Iuser> response = luserController.updateUserById(userDto);
 
         // Assert
-        assertThat(result).isNotNull();
-        assertThat(result.getStatus()).isEqualTo("Delivered");
-        assertThat(product.getQuantity()).isEqualTo(40); // Product quantity should be reduced
-        verify(productRepository, times(1)).save(product);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getPassword()).isEqualTo("12345");
     }
 
     @Test
-    void shouldNotUpdateProductWhenOrderNotDelivered() {
+    void shouldThrowUserNotFoundExceptionWhenUpdateUserByIdIsNotFound() {
         // Arrange
-        SalesOrderDTO orderDto = new SalesOrderDTO("Pending", 10);
-        SalesOrder order = new SalesOrder(1, "Pending", 10);
+        IuserDTO userDto = new IuserDTO("Sreeja", "sree", "123", "sree@gmail.com");
 
-        when(modelMapper.map(orderDto, SalesOrder.class)).thenReturn(order);
-        when(salesRepository.save(order)).thenReturn(order);
+        when(luserService.getUserById(1)).thenReturn(Optional.empty());
 
-        // Act
-        SalesOrder result = salesOrderService.updateOrderById(orderDto, 1);
-
-        // Assert
-        assertThat(result).isNotNull();
-        assertThat(result.getStatus()).isEqualTo("Pending");
-        verify(productRepository, never()).save(any(Product.class)); // Product should not be updated
+        // Act & Assert
+        assertThrows(UserNotFoundException.class, () -> luserController.updateUserById(userDto));
     }
 
     @Test
-    void shouldDeleteOrder() {
+    void shouldDeleteUserById() {
+        // Arrange
+        Iuser existingUser = new Iuser(1, "Sreeja", "sree", "123", "sree@gmail.com");
+
+        when(luserService.getUserById(1)).thenReturn(Optional.of(existingUser));
+        doNothing().when(luserService).deleteUserById(1);
+
         // Act
-        salesOrderService.deleteOrder(1);
+        ResponseEntity<Object> response = luserController.deleteUserById(1);
 
         // Assert
-        verify(salesRepository, times(1)).deleteById(1);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        verify(luserService, times(1)).deleteUserById(1);
+    }
+
+    @Test
+    void shouldThrowUserNotFoundExceptionWhenDeleteUserByIdIsNotFound() {
+        // Arrange
+        when(luserService.getUserById(1)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(UserNotFoundException.class, () -> luserController.deleteUserById(1));
+    }
+
+    @Test
+    void shouldGetUserByName() {
+        // Arrange
+        Iuser user = new Iuser(1, "Sreeja", "sree", "123", "sree@gmail.com");
+
+        when(luserService.getUserByName("sree")).thenReturn(Optional.of(user));
+
+        // Act
+        ResponseEntity<Iuser> response = luserController.getUserByName("sree");
+
+        // Assert
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getUsername()).isEqualTo("sree");
+    }
+
+    @Test
+    void shouldThrowUserNotFoundExceptionWhenUserByNameIsNotFound() {
+        // Arrange
+        when(luserService.getUserByName("sree")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(UserNotFoundException.class, () -> luserController.getUserByName("sree"));
+    }
+
+    @Test
+    void shouldGetUserByEmail() {
+        // Arrange
+        Iuser user = new Iuser(1, "Sreeja", "sree", "123", "sree@gmail.com");
+
+        when(luserService.getUserByEmail("sree@gmail.com")).thenReturn(Optional.of(user));
+
+        // Act
+        ResponseEntity<Iuser> response = luserController.getUserByEmail("sree@gmail.com");
+
+        // Assert
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getEmail()).isEqualTo("sree@gmail.com");
+    }
+
+    @Test
+    void shouldThrowUserNotFoundExceptionWhenUserByEmailIsNotFound() {
+        // Arrange
+        when(luserService.getUserByEmail("sree@gmail.com")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(UserNotFoundException.class, () -> luserController.getUserByEmail("sree@gmail.com"));
     }
 }
