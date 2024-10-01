@@ -1,0 +1,144 @@
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.modelmapper.ModelMapper;
+
+import java.util.Optional;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
+
+class SalesOrderServiceTest {
+
+    @Mock
+    private SalesRepository salesRepository;
+
+    @Mock
+    private ProductRepository productRepository;
+
+    @Mock
+    private ModelMapper modelMapper;
+
+    @InjectMocks
+    private SalesOrderService salesOrderService;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    void shouldGetAllSales() {
+        // Arrange
+        SalesOrder order1 = new SalesOrder(1, "Pending", 10);
+        SalesOrder order2 = new SalesOrder(2, "Delivered", 15);
+
+        when(salesRepository.findAll()).thenReturn(List.of(order1, order2));
+
+        // Act
+        Iterable<SalesOrder> result = salesOrderService.getAllSales();
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(((List<SalesOrder>) result).size()).isEqualTo(2);
+    }
+
+    @Test
+    void shouldGetAllOrdersByProductId() {
+        // Arrange
+        SalesOrder order1 = new SalesOrder(1, "Pending", 10);
+        SalesOrder order2 = new SalesOrder(2, "Delivered", 15);
+
+        when(salesRepository.findByProductProductId(1)).thenReturn(List.of(order1, order2));
+
+        // Act
+        List<SalesOrder> result = salesOrderService.getAllOrdersByProductId(1);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.size()).isEqualTo(2);
+    }
+
+    @Test
+    void shouldGetOrderById() {
+        // Arrange
+        SalesOrder order = new SalesOrder(1, "Pending", 10);
+        when(salesRepository.findById(1)).thenReturn(Optional.of(order));
+
+        // Act
+        Optional<SalesOrder> result = salesOrderService.getOrderById(1);
+
+        // Assert
+        assertThat(result).isPresent();
+        assertThat(result.get().getStatus()).isEqualTo("Pending");
+    }
+
+    @Test
+    void shouldAddNewOrder() {
+        // Arrange
+        SalesOrderDTO orderDto = new SalesOrderDTO("Pending", 10);
+        SalesOrder order = new SalesOrder(1, "Pending", 10);
+
+        when(modelMapper.map(orderDto, SalesOrder.class)).thenReturn(order);
+        when(salesRepository.save(any(SalesOrder.class))).thenReturn(order);
+
+        // Act
+        SalesOrder result = salesOrderService.addNewOrder(orderDto);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getStatus()).isEqualTo("Pending");
+        assertThat(result.getQuantity()).isEqualTo(10);
+    }
+
+    @Test
+    void shouldUpdateOrderByIdWhenDelivered() {
+        // Arrange
+        SalesOrderDTO orderDto = new SalesOrderDTO("Delivered", 10);
+        SalesOrder order = new SalesOrder(1, "Delivered", 10);
+        Product product = new Product(1, "Product1", 50, 20);
+
+        when(modelMapper.map(orderDto, SalesOrder.class)).thenReturn(order);
+        when(productRepository.findById(1)).thenReturn(Optional.of(product));
+        when(salesRepository.save(order)).thenReturn(order);
+
+        // Act
+        SalesOrder result = salesOrderService.updateOrderById(orderDto, 1);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getStatus()).isEqualTo("Delivered");
+        assertThat(product.getQuantity()).isEqualTo(40); // Product quantity should be reduced
+        verify(productRepository, times(1)).save(product);
+    }
+
+    @Test
+    void shouldNotUpdateProductWhenOrderNotDelivered() {
+        // Arrange
+        SalesOrderDTO orderDto = new SalesOrderDTO("Pending", 10);
+        SalesOrder order = new SalesOrder(1, "Pending", 10);
+
+        when(modelMapper.map(orderDto, SalesOrder.class)).thenReturn(order);
+        when(salesRepository.save(order)).thenReturn(order);
+
+        // Act
+        SalesOrder result = salesOrderService.updateOrderById(orderDto, 1);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getStatus()).isEqualTo("Pending");
+        verify(productRepository, never()).save(any(Product.class)); // Product should not be updated
+    }
+
+    @Test
+    void shouldDeleteOrder() {
+        // Act
+        salesOrderService.deleteOrder(1);
+
+        // Assert
+        verify(salesRepository, times(1)).deleteById(1);
+    }
+}
