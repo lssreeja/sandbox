@@ -1,1 +1,13 @@
 this is a text document
+Here's a polished version:
+
+"Dear [Recipient],
+
+I am writing to request an extension on submitting my UG provisional certificate. Due to prior commitments, I won't be able to collect it from Vishakapatnam before December 16th. However, I will ensure submission by January 15th.
+
+In the meantime, I have attached my marksheets for your reference. I kindly request your approval to extend the deadline.
+
+Thank you for your understanding.
+
+Best regards,
+[Your Name]"
