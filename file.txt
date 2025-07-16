@@ -1,13 +1,4 @@
-this is a text document
-Here's a polished version:
+I consistently ensure to deliver high-quality, clean, and reusable code . I use Test-Driven Development (TDD) practices and ensure all possible scenarios are covered. I also actively participate in team ceremonies. I am completing all my assigned trainings in time.
 
-"Dear [Recipient],
-
-I am writing to request an extension on submitting my UG provisional certificate. Due to prior commitments, I won't be able to collect it from Vishakapatnam before December 16th. However, I will ensure submission by January 15th.
-
-In the meantime, I have attached my marksheets for your reference. I kindly request your approval to extend the deadline.
-
-Thank you for your understanding.
-
-Best regards,
-[Your Name]"
+I make sure my code is clean with no defects and no regression issues after release. I maintain over 90% code coverage. I have also written BDD and end-to-end tests using Cypress. I’m also attending Azure training to improve my skills.
+I fill timesheet in time and I have been a buddy to a junior.
